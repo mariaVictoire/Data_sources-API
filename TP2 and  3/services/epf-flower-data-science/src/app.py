@@ -24,3 +24,4 @@ def get_application() -> FastAPI:
     application.include_router(data_router, prefix="/data", tags=["data"])
 
     return application
+
