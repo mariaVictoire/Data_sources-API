@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi.responses import RedirectResponse  # Import pour la redirection
+from fastapi.responses import RedirectResponse
 from src.app import get_application
 
 app = get_application()

@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+services/epf-flower-data-science/src/config/kaggle.json
 
 # C extensions
 *.so
