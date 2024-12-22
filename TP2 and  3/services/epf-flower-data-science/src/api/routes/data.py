@@ -11,6 +11,9 @@ import requests
 import joblib
 from sklearn.metrics import accuracy_score
 import traceback
+from pydantic import BaseModel
+import numpy as np
+
 
 router = APIRouter()
 split_data = {"train": None,"test": None}
@@ -181,4 +184,70 @@ def train_model():
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erreur lors de l'entraînement : {str(e)}")
  
+@router.post("/predict/{filename}")
+def predict(filename: str):
+    try:
+        # Étape 1 : Vérification du modèle
+        print("Étape 1 : Vérification du modèle...")  
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        data_folder = os.path.abspath(os.path.join(current_dir, "../../models/classification_model.pkl"))
+        model_path = os.path.join(data_folder)
+ 
+        if not os.path.exists(model_path):
+            raise HTTPException(
+                status_code=500,
+                detail="Le modèle n'est pas disponible. Veuillez entraîner le modèle d'abord."
+            )
+           
+        print(f"Modèle trouvé : {model_path}")  
+ 
+        # Étape 2 : Chargement du modèle
+        model = joblib.load(model_path)
+        print(f"Type du modèle chargé : {type(model)}")
+ 
+        # Étape 3 : Chargement des données
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        data_folder = os.path.abspath(os.path.join(current_dir, "../../Data"))
+        file_path = os.path.join(data_folder, filename)
+        if not os.path.exists(file_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Le fichier {filename} n'a pas été trouvé dans {data_folder}."
+            )
+ 
+        print(f"Chargement des données depuis : {file_path}") 
+        df_input = pd.read_csv(file_path)
+        print(f"Données chargées : \n{df_input.head()}")
+ 
+        # Vérification des colonnes
+        expected_columns = ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']
+        print(f"Colonnes attendues : {expected_columns}") 
+        print(f"Colonnes reçues : {df_input.columns}")
+ 
+        # Vérifier si les colonnes sont valides
+        missing_columns = [col for col in expected_columns if col not in df_input.columns]
+        if missing_columns:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Colonnes manquantes : {missing_columns}"
+            )
+ 
+        # Garde uniquement les colonnes nécessaires
+        df_input = df_input[expected_columns]
+ 
+        # Vérifier les types
+        print(f"Types des colonnes : {df_input.dtypes}")
+ 
+        # Étape 4 : Prédictions
+        print("Prédiction en cours...") 
+        predictions = model.predict(df_input)
+        print(f"Prédictions générées : {predictions}")
+ 
+        # Étape 5 : Retour des prédictions
+        return {"predictions": predictions.tolist()}
+ 
+    except Exception as e:
+        print("Erreur non spécifiée détectée.")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction : {str(e)}")
  
