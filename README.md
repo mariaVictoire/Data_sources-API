@@ -27,7 +27,44 @@ The API follows fundamental **REST** principles and includes advanced features s
 
 ---
 
+## Implemented Endpoints
+### 1. Data Processing
+- Load Dataset:
+Returns the content of the Iris dataset in JSON format.
 
+![alt text](<TP2 and  3/data/images/load_data1.png>)
+
+![alt text](<TP2 and  3/data/images/load_data2.png>)
+
+
+- Clean Dataset:
+Cleans the dataset to prepare it for training.
+
+![alt text](<TP2 and  3/data/images/clean_data1.png>)
+
+![alt text](<TP2 and  3/data/images/clean_data2.png>)
+
+- Split Train/Test:
+Splits the dataset into training and testing sets.
+
+![alt text](<TP2 and  3/data/images/split_data1.png>)
+
+![alt text](<TP2 and  3/data/images/split_data2.png>)
+
+
+- Train Model:
+Trains a classification model and saves it.
+
+![alt text](<TP2 and  3/data/images/train_data1.png>)
+
+![alt text](<TP2 and  3/data/images/train_data2.png>)
+
+- Predict:
+Generates predictions using the saved model.
+
+![alt text](<TP2 and  3/data/images/predict_data1.png>)
+
+![alt text](<TP2 and  3/data/images/predict_data2.png>)
 
 
 
