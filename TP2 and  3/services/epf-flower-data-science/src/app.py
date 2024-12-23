@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from src.api.router import router 
 from src.api.routes.data import router as data_router
@@ -8,7 +8,14 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.openapi.utils import get_openapi
 swagger_token = None
 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="authentification/login")
+
+limiter = Limiter(key_func=get_remote_address)
 
 def custom_openapi():
     """Personnalisation du schéma OpenAPI."""
@@ -35,6 +42,15 @@ def custom_openapi():
     return app.openapi_schema
  
 
+#  Configurer le Middleware Rate Limiting 
+async def rate_limit_middleware(request: Request, call_next):
+    """Middleware pour gérer les limites de requêtes globales."""
+    try:
+        response = await call_next(request)
+        return response
+    except RateLimitExceeded:
+        raise HTTPException(status_code=429, detail="Trop de requêtes. Réessayez plus tard.")
+
 
 def get_application() -> FastAPI:
     application = FastAPI(
@@ -52,12 +68,41 @@ def get_application() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Ajouter le middleware SlowAPI pour le rate limiting
+    application.state.limiter = limiter
+    application.add_middleware(SlowAPIMiddleware)
+ 
+    # Ajouter le middleware personnalisé pour les requêtes
+    application.middleware("http")(rate_limit_middleware)
+
+
     application.include_router(router)
-    application.include_router(data_router, prefix="/data", tags=["data"])
-    application.include_router(parameters_router, prefix="/parameters", tags=["parameters"])
-    application.include_router(authentification_router, prefix="/authentification", tags=["authentification"])
+    application.include_router(data_router, prefix="/v0/data", tags=["data"])
+    application.include_router(parameters_router, prefix="/v0/parameters", tags=["parameters"])
+    application.include_router(authentification_router, prefix="/v0/authentification", tags=["authentification"])
     application.openapi = custom_openapi
+
+    # Ajout de la configuration personnalisée pour Swagger
+    application.openapi = custom_openapi
+
+    # --- Gestion des erreurs personnalisées ---
+    @application.exception_handler(404)
+    async def custom_404_handler(request: Request, exc: HTTPException):
+        """Gestionnaire d'erreur personnalisé pour 404."""
+        return HTTPException(
+            status_code=404,
+            detail=f"Route '{request.url.path}' introuvable. Vérifiez l'URL et réessayez."
+        )
+ 
 
     return application
 
 app = get_application()
+ 
+
+ 
+ 
+
+ 
+
+ 
